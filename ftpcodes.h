@@ -42,6 +42,7 @@
 
 #define FTP_GIVEPWORD         331
 #define FTP_RESTOK            350
+#define FTP_RANGOK            350
 #define FTP_RNFROK            350
 
 #define FTP_IDLE_TIMEOUT      421

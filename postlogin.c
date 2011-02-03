@@ -42,6 +42,7 @@ static void handle_mkd(struct vsf_session* p_sess);
 static void handle_rmd(struct vsf_session* p_sess);
 static void handle_dele(struct vsf_session* p_sess);
 static void handle_rest(struct vsf_session* p_sess);
+static void handle_rang(struct vsf_session* p_sess);
 static void handle_rnfr(struct vsf_session* p_sess);
 static void handle_rnto(struct vsf_session* p_sess);
 static void handle_nlst(struct vsf_session* p_sess);
@@ -270,6 +271,10 @@ process_post_login(struct vsf_session* p_sess)
     else if (str_equal_text(&p_sess->ftp_cmd_str, "REST"))
     {
       handle_rest(p_sess);
+    }
+    else if (str_equal_text(&p_sess->ftp_cmd_str, "RANG"))
+    {
+      handle_rang(p_sess);
     }
     else if (tunable_write_enable &&
              (tunable_anon_other_write_enable || !p_sess->is_anonymous) &&
@@ -638,7 +643,11 @@ handle_retr(struct vsf_session* p_sess, int is_http)
   int opened_file;
   int is_ascii = 0;
   filesize_t offset = p_sess->restart_pos;
+  filesize_t end_pos = p_sess->end_pos;
+  int is_end_pos = p_sess->is_end_pos;
   p_sess->restart_pos = 0;
+  p_sess->end_pos = 0;
+  p_sess->is_end_pos = 0;
   if (!is_http && !data_transfer_checks_ok(p_sess))
   {
     return;
@@ -729,7 +738,8 @@ handle_retr(struct vsf_session* p_sess, int is_http)
     }
   }
   trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
-                                          opened_file, 0, is_ascii);
+                                          opened_file, 0, is_ascii,
+                                          end_pos, is_end_pos);
   if (!is_http &&
       vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 &&
       trans_ret.retval == 0)
@@ -1001,6 +1011,8 @@ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
   int do_truncate = 0;
   filesize_t offset = p_sess->restart_pos;
   p_sess->restart_pos = 0;
+  p_sess->end_pos = 0;
+  p_sess->is_end_pos = 0;
   if (!data_transfer_checks_ok(p_sess))
   {
     return;
@@ -1103,12 +1115,12 @@ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
   if (tunable_ascii_upload_enable && p_sess->is_ascii)
   {
     trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
-                                            new_file_fd, 1, 1);
+                                            new_file_fd, 1, 1, 0, 0);
   }
   else
   {
     trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
-                                            new_file_fd, 1, 0);
+                                            new_file_fd, 1, 0, 0, 0);
   }
   if (vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 && trans_ret.retval == 0)
   {
@@ -1246,6 +1258,34 @@ handle_rest(struct vsf_session* p_sess)
   str_append_filesize_t(&s_rest_str, val);
   str_append_text(&s_rest_str, ").");
   vsf_cmdio_write_str(p_sess, FTP_RESTOK, &s_rest_str);
+}
+
+static void
+handle_rang(struct vsf_session* p_sess)
+{
+  static struct mystr s_rang_str;
+  static struct mystr s_start_pos_str;
+  static struct mystr s_end_pos_str;
+  filesize_t start_pos;
+  filesize_t end_pos;
+  str_empty(&s_start_pos_str);
+  str_empty(&s_end_pos_str);
+  str_copy(&s_start_pos_str, &p_sess->ftp_arg_str);
+  str_split_char(&s_start_pos_str, &s_end_pos_str, ' ');
+  start_pos = str_a_to_filesize_t(&s_start_pos_str);
+  end_pos = str_a_to_filesize_t(&s_end_pos_str);
+  str_free(&s_start_pos_str);
+  str_free(&s_end_pos_str);
+  // validate range, possibly reset.
+  p_sess->restart_pos = start_pos;
+  p_sess->end_pos = end_pos;
+  p_sess->is_end_pos = 1;
+  str_alloc_text(&s_rang_str, "Restarting at ");
+  str_append_filesize_t(&s_rang_str, start_pos);
+  str_append_text(&s_rang_str, ". End Byte range at ");
+  str_append_filesize_t(&s_rang_str, end_pos);
+  str_append_text(&s_rang_str, ".");
+  vsf_cmdio_write_str(p_sess, FTP_RANGOK, &s_rang_str);
 }
 
 static void
@@ -1962,6 +2002,8 @@ handle_http(struct vsf_session* p_sess)
   vsf_cmdio_write_raw(p_sess, "\r\n");
   p_sess->is_ascii = 0;
   p_sess->restart_pos = 0;
+  p_sess->end_pos = 0;
+  p_sess->is_end_pos = 0;
   handle_retr(p_sess, 1);
   if (vsf_log_entry_pending(p_sess))
   {

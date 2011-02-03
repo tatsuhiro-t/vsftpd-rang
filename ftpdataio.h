@@ -76,7 +76,8 @@ struct vsf_transfer_ret
 };
 struct vsf_transfer_ret vsf_ftpdataio_transfer_file(
   struct vsf_session* p_sess,
-  int remote_fd, int file_fd, int is_recv, int is_ascii);
+  int remote_fd, int file_fd, int is_recv, int is_ascii,
+  filesize_t end_pos, int is_end_pos);
 
 /* vsf_ftpdataio_transfer_dir()
  * PURPOSE

@@ -40,6 +40,7 @@ handle_feat(struct vsf_session* p_sess)
     vsf_cmdio_write_raw(p_sess, " PROT\r\n");
   }
   vsf_cmdio_write_raw(p_sess, " REST STREAM\r\n");
+  vsf_cmdio_write_raw(p_sess, " RANG STREAM\r\n");
   vsf_cmdio_write_raw(p_sess, " SIZE\r\n");
   vsf_cmdio_write_raw(p_sess, " TVFS\r\n");
   vsf_cmdio_write_raw(p_sess, " UTF8\r\n");
