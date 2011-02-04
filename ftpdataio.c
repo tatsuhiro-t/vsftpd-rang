@@ -568,7 +568,7 @@ calc_num_send(int file_fd, filesize_t init_offset,
     die("calc_num_send: negative file offset or send count");
   }
   if (is_range && bytes_to_send < end_offset) {
-    die("calc_num_send: end_offset beyond file size");
+    end_offset = bytes_to_send;
   }
   /* Don't underflow if some bonehead sets a REST greater than the file size */
   if (init_offset > bytes_to_send)

@@ -704,6 +704,13 @@ handle_retr(struct vsf_session* p_sess, int is_http)
     vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
     goto file_close_out;
   }
+  /* Check filesize against end_pos (from RANG) if any */
+  if (is_range) {
+    if (vsf_sysutil_statbuf_get_size(s_p_statbuf) < end_offset) {
+      vsf_cmdio_write(p_sess, FTP_FILEFAIL, "End offset is larger than file.");
+      goto file_close_out;
+    }
+  }
   /* Set the download offset (from REST) if any */
   if (offset != 0)
   {
