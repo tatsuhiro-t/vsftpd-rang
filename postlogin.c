@@ -1281,15 +1281,22 @@ handle_rang(struct vsf_session* p_sess)
   end_pos = str_a_to_filesize_t(&s_end_pos_str);
   str_free(&s_start_pos_str);
   str_free(&s_end_pos_str);
-  // validate range, possibly reset.
-  p_sess->restart_pos = start_pos;
-  p_sess->end_pos = end_pos;
-  p_sess->is_range = 1;
-  str_alloc_text(&s_rang_str, "Restarting at ");
-  str_append_filesize_t(&s_rang_str, start_pos);
-  str_append_text(&s_rang_str, ". End Byte range at ");
-  str_append_filesize_t(&s_rang_str, end_pos);
-  str_append_text(&s_rang_str, ".");
+  if(start_pos > end_pos) {
+    // Reset range
+    p_sess->restart_pos = 0;
+    p_sess->end_pos = 0;
+    p_sess->is_range = 0;
+    str_alloc_text(&s_rang_str, "Range reseted. Restarting at 0.");
+  } else {
+    p_sess->restart_pos = start_pos;
+    p_sess->end_pos = end_pos;
+    p_sess->is_range = 1;
+    str_alloc_text(&s_rang_str, "Restarting at ");
+    str_append_filesize_t(&s_rang_str, start_pos);
+    str_append_text(&s_rang_str, ". End Byte range at ");
+    str_append_filesize_t(&s_rang_str, end_pos);
+    str_append_text(&s_rang_str, ".");
+  }
   vsf_cmdio_write_str(p_sess, FTP_RANGOK, &s_rang_str);
 }
 
