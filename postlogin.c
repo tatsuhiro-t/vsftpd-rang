@@ -1009,7 +1009,10 @@ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
   int success = 0;
   int created = 0;
   int do_truncate = 0;
-  filesize_t offset = p_sess->restart_pos;
+  filesize_t offset = 0;
+  if(!p_sess->is_range) {
+    offset = p_sess->restart_pos;
+  }
   p_sess->restart_pos = 0;
   p_sess->end_pos = 0;
   p_sess->is_range = 0;
@@ -1254,6 +1257,8 @@ handle_rest(struct vsf_session* p_sess)
     val = 0;
   }
   p_sess->restart_pos = val;
+  p_sess->end_pos = 0;
+  p_sess->is_range = 0;
   str_alloc_text(&s_rest_str, "Restart position accepted (");
   str_append_filesize_t(&s_rest_str, val);
   str_append_text(&s_rest_str, ").");
