@@ -63,6 +63,8 @@ int vsf_ftpdataio_post_mark_connect(struct vsf_session* p_sess);
  * file_fd      - the file descriptor of the local file
  * is_recv      - 0 for sending to the remote, otherwise receive
  * is_ascii     - non zero for ASCII mangling
+ * end_offset   - end offset of transfer (from RANG)
+ * is_range     - non zero if end_offset is given.
  * RETURNS
  * A structure, containing
  * retval       - 0 for success, failure otherwise
