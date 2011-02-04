@@ -33,7 +33,7 @@
 
 static void init_data_sock_params(struct vsf_session* p_sess, int sock_fd);
 static filesize_t calc_num_send(int file_fd, filesize_t init_offset,
-                                filesize_t end_pos, int is_range);
+                                filesize_t end_offset, int is_range);
 static struct vsf_transfer_ret do_file_send_sendfile(
   struct vsf_session* p_sess, int net_fd, int file_fd,
   filesize_t curr_file_offset, filesize_t bytes_to_send);
@@ -430,7 +430,7 @@ write_dir_list(struct vsf_session* p_sess, struct mystr_list* p_dir_list,
 struct vsf_transfer_ret
 vsf_ftpdataio_transfer_file(struct vsf_session* p_sess, int remote_fd,
                             int file_fd, int is_recv, int is_ascii,
-                            filesize_t end_pos, int is_range)
+                            filesize_t end_offset, int is_range)
 {
   if (!is_recv)
   {
@@ -442,7 +442,7 @@ vsf_ftpdataio_transfer_file(struct vsf_session* p_sess, int remote_fd,
     {
       filesize_t curr_offset = vsf_sysutil_get_file_offset(file_fd);
       filesize_t num_send = calc_num_send(file_fd, curr_offset,
-                                          end_pos, is_range);
+                                          end_offset, is_range);
       return do_file_send_sendfile(
         p_sess, remote_fd, file_fd, curr_offset, num_send);
     }
@@ -556,7 +556,7 @@ do_file_send_sendfile(struct vsf_session* p_sess, int net_fd, int file_fd,
 
 static filesize_t
 calc_num_send(int file_fd, filesize_t init_offset,
-              filesize_t end_pos, int is_range)
+              filesize_t end_offset, int is_range)
 {
   static struct vsf_sysutil_statbuf* s_p_statbuf;
   filesize_t bytes_to_send;
@@ -567,8 +567,8 @@ calc_num_send(int file_fd, filesize_t init_offset,
   {
     die("calc_num_send: negative file offset or send count");
   }
-  if (is_range && bytes_to_send < end_pos+1) {
-    die("calc_num_send: end_pos beyond file size");
+  if (is_range && bytes_to_send < end_offset) {
+    die("calc_num_send: end_offset beyond file size");
   }
   /* Don't underflow if some bonehead sets a REST greater than the file size */
   if (init_offset > bytes_to_send)
@@ -578,7 +578,7 @@ calc_num_send(int file_fd, filesize_t init_offset,
   else
   {
     if (is_range) {
-      bytes_to_send = end_pos+1-init_offset;
+      bytes_to_send = end_offset-init_offset;
     } else {
       bytes_to_send -= init_offset;
     }

@@ -643,7 +643,7 @@ handle_retr(struct vsf_session* p_sess, int is_http)
   int opened_file;
   int is_ascii = 0;
   filesize_t offset = p_sess->restart_pos;
-  filesize_t end_pos = p_sess->end_pos;
+  filesize_t end_offset = p_sess->end_pos+1;
   int is_range = p_sess->is_range;
   p_sess->restart_pos = 0;
   p_sess->end_pos = 0;
@@ -739,7 +739,7 @@ handle_retr(struct vsf_session* p_sess, int is_http)
   }
   trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
                                           opened_file, 0, is_ascii,
-                                          end_pos, is_range);
+                                          end_offset, is_range);
   if (!is_http &&
       vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 &&
       trans_ret.retval == 0)
