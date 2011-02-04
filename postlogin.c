@@ -644,10 +644,10 @@ handle_retr(struct vsf_session* p_sess, int is_http)
   int is_ascii = 0;
   filesize_t offset = p_sess->restart_pos;
   filesize_t end_pos = p_sess->end_pos;
-  int is_end_pos = p_sess->is_end_pos;
+  int is_range = p_sess->is_range;
   p_sess->restart_pos = 0;
   p_sess->end_pos = 0;
-  p_sess->is_end_pos = 0;
+  p_sess->is_range = 0;
   if (!is_http && !data_transfer_checks_ok(p_sess))
   {
     return;
@@ -739,7 +739,7 @@ handle_retr(struct vsf_session* p_sess, int is_http)
   }
   trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
                                           opened_file, 0, is_ascii,
-                                          end_pos, is_end_pos);
+                                          end_pos, is_range);
   if (!is_http &&
       vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 &&
       trans_ret.retval == 0)
@@ -1012,7 +1012,7 @@ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
   filesize_t offset = p_sess->restart_pos;
   p_sess->restart_pos = 0;
   p_sess->end_pos = 0;
-  p_sess->is_end_pos = 0;
+  p_sess->is_range = 0;
   if (!data_transfer_checks_ok(p_sess))
   {
     return;
@@ -1279,7 +1279,7 @@ handle_rang(struct vsf_session* p_sess)
   // validate range, possibly reset.
   p_sess->restart_pos = start_pos;
   p_sess->end_pos = end_pos;
-  p_sess->is_end_pos = 1;
+  p_sess->is_range = 1;
   str_alloc_text(&s_rang_str, "Restarting at ");
   str_append_filesize_t(&s_rang_str, start_pos);
   str_append_text(&s_rang_str, ". End Byte range at ");
@@ -2003,7 +2003,7 @@ handle_http(struct vsf_session* p_sess)
   p_sess->is_ascii = 0;
   p_sess->restart_pos = 0;
   p_sess->end_pos = 0;
-  p_sess->is_end_pos = 0;
+  p_sess->is_range = 0;
   handle_retr(p_sess, 1);
   if (vsf_log_entry_pending(p_sess))
   {
